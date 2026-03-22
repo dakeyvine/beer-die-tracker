@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Player {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  throws        Throw[] @relation("Thrower")
+  catches       Throw[] @relation("Catcher")
+  faults        Throw[] @relation("FaultPlayer")
+  gamePlayers   GamePlayer[]
+}
+
+model Game {
+  id        String   @id @default(cuid())
+  playedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  players GamePlayer[]
+  throws  Throw[]
+}
+
+model GamePlayer {
+  id       String @id @default(cuid())
+  team     String // "A" or "B"
+  gameId   String
+  playerId String
+
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id])
+
+  @@unique([gameId, playerId])
+}
+
+model Throw {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+
+  gameId        String
+  throwerId     String
+  isHit         Boolean
+  isScored      Boolean? // null if miss
+  scoreType     String?  // "regular" (1pt), "tink" (2pt), "sink" (4pt) — set when isScored = true
+  catcherId     String?  // set when isScored = false (caught by defense)
+  faultPlayerId String?  // set when isScored = true (defender at fault)
+
+  game        Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  thrower     Player  @relation("Thrower", fields: [throwerId], references: [id])
+  catcher     Player? @relation("Catcher", fields: [catcherId], references: [id])
+  faultPlayer Player? @relation("FaultPlayer", fields: [faultPlayerId], references: [id])
+}
