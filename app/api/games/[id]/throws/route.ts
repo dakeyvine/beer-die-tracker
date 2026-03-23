@@ -31,23 +31,28 @@ export async function POST(
     return NextResponse.json({ error: "throwerId and isHit are required" }, { status: 400 });
   }
 
-  const t = await prisma.throw.create({
-    data: {
-      gameId,
-      throwerId,
-      isHit,
-      isScored: isHit ? isScored : null,
-      scoreType: isHit && isScored ? (scoreType ?? "regular") : null,
-      catcherId: isHit && !isScored ? catcherId ?? null : null,
-      faultPlayerId: isHit && isScored ? faultPlayerId ?? null : null,
-      saveDifficulty: isHit && saveDifficulty !== undefined ? saveDifficulty : null,
-    },
-    include: {
-      thrower: true,
-      catcher: true,
-      faultPlayer: true,
-    },
-  });
+  try {
+    const created = await prisma.throw.create({
+      data: {
+        gameId,
+        throwerId,
+        isHit,
+        isScored: isHit ? isScored : null,
+        scoreType: isHit && isScored ? (scoreType ?? "regular") : null,
+        catcherId: isHit && !isScored ? catcherId ?? null : null,
+        faultPlayerId: isHit && isScored ? faultPlayerId ?? null : null,
+        saveDifficulty: isHit && saveDifficulty !== undefined ? saveDifficulty : null,
+      },
+    });
 
-  return NextResponse.json(t, { status: 201 });
+    const t = await prisma.throw.findUnique({
+      where: { id: created.id },
+      include: { thrower: true, catcher: true, faultPlayer: true },
+    });
+
+    return NextResponse.json(t, { status: 201 });
+  } catch (e) {
+    console.error("POST throws error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }

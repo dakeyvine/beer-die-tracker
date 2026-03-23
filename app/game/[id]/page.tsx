@@ -72,15 +72,25 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
 
   async function recordThrow(body: object) {
     setSaving(true);
-    const res = await fetch(`/api/games/${gameId}/throws`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const t = await res.json();
-    setThrows((prev) => [...prev, t]);
-    reset();
-    setSaving(false);
+    try {
+      const res = await fetch(`/api/games/${gameId}/throws`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        alert("Error saving throw: " + err);
+        return;
+      }
+      const t = await res.json();
+      setThrows((prev) => [...prev, t]);
+      reset();
+    } catch (e) {
+      alert("Network error: " + e);
+    } finally {
+      setSaving(false);
+    }
   }
 
   function reset() {
