@@ -24,13 +24,13 @@ type PlayerStats = {
   defSaveDifficulty: number | null;
 };
 
-type Mode = "best" | "worst";
+type Mode = "best" | "worst" | "none";
 
 function computeRanks(
   players: PlayerStats[],
   getValue: (p: PlayerStats) => number | null,
   higherIsBetter: boolean,
-  mode: Mode
+  mode: "best" | "worst"
 ): Map<string, 1 | 2 | 3> {
   const map = new Map<string, 1 | 2 | 3>();
   const valid = players
@@ -160,7 +160,6 @@ export default function StatsPage() {
   const [stats, setStats] = useState<PlayerStats[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [mode, setMode] = useState<Mode>("best");
-  const [showRanks, setShowRanks] = useState(true);
 
   useEffect(() => {
     fetch("/api/stats")
@@ -173,33 +172,34 @@ export default function StatsPage() {
 
   const displayed = stats.filter((s) => selectedIds.has(s.id));
 
+  const rankMode = mode === "none" ? "best" : mode;
   const ranks = {
-    totalThrows:        computeRanks(displayed, (p) => p.totalThrows, true, mode),
-    hits:               computeRanks(displayed, (p) => p.hits, true, mode),
-    totalDefenses:      computeRanks(displayed, (p) => p.totalDefenses, true, mode),
-    hitRate:            computeRanks(displayed, (p) => p.hitRate, true, mode),
-    conversionRate:     computeRanks(displayed, (p) => p.conversionRate, true, mode),
-    totalPoints:        computeRanks(displayed, (p) => p.totalPoints, true, mode),
-    pointsShareOfTeam:  computeRanks(displayed, (p) => p.pointsShareOfTeam, true, mode),
-    plusMinus:          computeRanks(displayed, (p) => p.plusMinus, true, mode),
-    totalCatches:       computeRanks(displayed, (p) => p.totalCatches, true, mode),
-    totalFaults:        computeRanks(displayed, (p) => p.totalFaults, false, mode),
-    catchRate:          computeRanks(displayed, (p) => p.catchRate, true, mode),
-    defensiveLiability: computeRanks(displayed, (p) => p.defensiveLiability, false, mode),
-    offSaveDifficulty:  computeRanks(displayed, (p) => p.offSaveDifficulty, true, mode),
-    defSaveDifficulty:  computeRanks(displayed, (p) => p.defSaveDifficulty, true, mode),
+    totalThrows:        computeRanks(displayed, (p) => p.totalThrows, true, rankMode),
+    hits:               computeRanks(displayed, (p) => p.hits, true, rankMode),
+    totalDefenses:      computeRanks(displayed, (p) => p.totalDefenses, true, rankMode),
+    hitRate:            computeRanks(displayed, (p) => p.hitRate, true, rankMode),
+    conversionRate:     computeRanks(displayed, (p) => p.conversionRate, true, rankMode),
+    totalPoints:        computeRanks(displayed, (p) => p.totalPoints, true, rankMode),
+    pointsShareOfTeam:  computeRanks(displayed, (p) => p.pointsShareOfTeam, true, rankMode),
+    plusMinus:          computeRanks(displayed, (p) => p.plusMinus, true, rankMode),
+    totalCatches:       computeRanks(displayed, (p) => p.totalCatches, true, rankMode),
+    totalFaults:        computeRanks(displayed, (p) => p.totalFaults, false, rankMode),
+    catchRate:          computeRanks(displayed, (p) => p.catchRate, true, rankMode),
+    defensiveLiability: computeRanks(displayed, (p) => p.defensiveLiability, false, rankMode),
+    offSaveDifficulty:  computeRanks(displayed, (p) => p.offSaveDifficulty, true, rankMode),
+    defSaveDifficulty:  computeRanks(displayed, (p) => p.defSaveDifficulty, true, rankMode),
   };
 
-  const medalStyles = mode === "best"
+  const medalStyles = mode === "worst"
     ? [
-        { cls: "bg-yellow-400 text-yellow-900", label: "1st best" },
-        { cls: "bg-gray-300 text-gray-700",     label: "2nd best" },
-        { cls: "bg-orange-300 text-orange-900", label: "3rd best" },
-      ]
-    : [
         { cls: "bg-red-500 text-white",         label: "1st worst" },
         { cls: "bg-red-300 text-red-900",       label: "2nd worst" },
         { cls: "bg-red-100 text-red-600",       label: "3rd worst" },
+      ]
+    : [
+        { cls: "bg-yellow-400 text-yellow-900", label: "1st best" },
+        { cls: "bg-gray-300 text-gray-700",     label: "2nd best" },
+        { cls: "bg-orange-300 text-orange-900", label: "3rd best" },
       ];
 
   return (
@@ -217,29 +217,18 @@ export default function StatsPage() {
       {displayed.length > 1 && (
         <div className="flex items-center gap-4 mb-5 flex-wrap">
           <div className="flex rounded-xl border border-gray-200 overflow-hidden text-sm font-medium">
-            <button
-              type="button"
-              onClick={() => setMode("best")}
-              className={`px-4 py-2 ${mode === "best" ? "bg-gray-800 text-white" : "bg-white text-gray-500"}`}
-            >
-              Best
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("worst")}
-              className={`px-4 py-2 ${mode === "worst" ? "bg-gray-800 text-white" : "bg-white text-gray-500"}`}
-            >
-              Worst
-            </button>
+            {(["best", "worst", "none"] as Mode[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                className={`px-4 py-2 capitalize ${mode === m ? "bg-gray-800 text-white" : "bg-white text-gray-500"}`}
+              >
+                {m === "none" ? "None" : m.charAt(0).toUpperCase() + m.slice(1)}
+              </button>
+            ))}
           </div>
-          <button
-            type="button"
-            onClick={() => setShowRanks((r) => !r)}
-            className={`flex rounded-xl border border-gray-200 overflow-hidden text-sm font-medium px-4 py-2 ${showRanks ? "bg-gray-800 text-white" : "bg-white text-gray-500"}`}
-          >
-            Ranks
-          </button>
-          {showRanks && (
+          {mode !== "none" && (
             <div className="flex gap-3 text-xs text-gray-500">
               {medalStyles.map(({ cls, label }, i) => (
                 <span key={i} className="flex items-center gap-1">
@@ -282,37 +271,37 @@ export default function StatsPage() {
                       <td className="py-3 pr-3 font-semibold">{s.name}</td>
                       <td className="text-center py-3 px-2 text-gray-400">
                         <span className="inline-flex items-center justify-center">
-                          {s.totalThrows}<Medal rank={showRanks ? ranks.totalThrows.get(s.id) : undefined} mode={mode} />
+                          {s.totalThrows}<Medal rank={mode !== "none" ? ranks.totalThrows.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2 text-gray-400">
                         <span className="inline-flex items-center justify-center">
-                          {s.hits}<Medal rank={showRanks ? ranks.hits.get(s.id) : undefined} mode={mode} />
+                          {s.hits}<Medal rank={mode !== "none" ? ranks.hits.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2 font-semibold">
                         <span className="inline-flex items-center justify-center">
-                          {s.totalPoints}<Medal rank={showRanks ? ranks.totalPoints.get(s.id) : undefined} mode={mode} />
+                          {s.totalPoints}<Medal rank={mode !== "none" ? ranks.totalPoints.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
-                          {saveDiffFmt(s.offSaveDifficulty)}<Medal rank={showRanks ? ranks.offSaveDifficulty.get(s.id) : undefined} mode={mode} />
+                          {saveDiffFmt(s.offSaveDifficulty)}<Medal rank={mode !== "none" ? ranks.offSaveDifficulty.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
-                          {pct(s.hitRate)}<Medal rank={showRanks ? ranks.hitRate.get(s.id) : undefined} mode={mode} />
+                          {pct(s.hitRate)}<Medal rank={mode !== "none" ? ranks.hitRate.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
-                          {pct(s.conversionRate)}<Medal rank={showRanks ? ranks.conversionRate.get(s.id) : undefined} mode={mode} />
+                          {pct(s.conversionRate)}<Medal rank={mode !== "none" ? ranks.conversionRate.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
-                          {pct(s.pointsShareOfTeam)}<Medal rank={showRanks ? ranks.pointsShareOfTeam.get(s.id) : undefined} mode={mode} />
+                          {pct(s.pointsShareOfTeam)}<Medal rank={mode !== "none" ? ranks.pointsShareOfTeam.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                     </tr>
@@ -347,37 +336,37 @@ export default function StatsPage() {
                       <td className="py-3 pr-3 font-semibold">{s.name}</td>
                       <td className="text-center py-3 px-2 text-gray-400">
                         <span className="inline-flex items-center justify-center">
-                          {s.totalDefenses}<Medal rank={showRanks ? ranks.totalDefenses.get(s.id) : undefined} mode={mode} />
+                          {s.totalDefenses}<Medal rank={mode !== "none" ? ranks.totalDefenses.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
-                          {s.totalCatches}<Medal rank={showRanks ? ranks.totalCatches.get(s.id) : undefined} mode={mode} />
+                          {s.totalCatches}<Medal rank={mode !== "none" ? ranks.totalCatches.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
-                          {s.totalFaults}<Medal rank={showRanks ? ranks.totalFaults.get(s.id) : undefined} mode={mode} />
+                          {s.totalFaults}<Medal rank={mode !== "none" ? ranks.totalFaults.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
-                          {saveDiffFmt(s.defSaveDifficulty)}<Medal rank={showRanks ? ranks.defSaveDifficulty.get(s.id) : undefined} mode={mode} />
+                          {saveDiffFmt(s.defSaveDifficulty)}<Medal rank={mode !== "none" ? ranks.defSaveDifficulty.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
-                          {pct(s.catchRate)}<Medal rank={showRanks ? ranks.catchRate.get(s.id) : undefined} mode={mode} />
+                          {pct(s.catchRate)}<Medal rank={mode !== "none" ? ranks.catchRate.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
-                          {pct(s.defensiveLiability)}<Medal rank={showRanks ? ranks.defensiveLiability.get(s.id) : undefined} mode={mode} />
+                          {pct(s.defensiveLiability)}<Medal rank={mode !== "none" ? ranks.defensiveLiability.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className={`inline-flex items-center justify-center ${pm.cls}`}>
-                          {pm.text}<Medal rank={showRanks ? ranks.plusMinus.get(s.id) : undefined} mode={mode} />
+                          {pm.text}<Medal rank={mode !== "none" ? ranks.plusMinus.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                     </tr>
@@ -397,9 +386,9 @@ export default function StatsPage() {
                   <div className="font-bold text-lg mb-3">{s.name}</div>
                   <div className="grid grid-cols-3 gap-2 text-center mb-3">
                     {[
-                      { label: "Hit %",    val: pct(s.hitRate),         rank: showRanks ? ranks.hitRate.get(s.id) : undefined },
-                      { label: "Conv %",   val: pct(s.conversionRate),  rank: showRanks ? ranks.conversionRate.get(s.id) : undefined },
-                      { label: "Catch %",  val: pct(s.catchRate),       rank: showRanks ? ranks.catchRate.get(s.id) : undefined },
+                      { label: "Hit %",    val: pct(s.hitRate),         rank: mode !== "none" ? ranks.hitRate.get(s.id) : undefined },
+                      { label: "Conv %",   val: pct(s.conversionRate),  rank: mode !== "none" ? ranks.conversionRate.get(s.id) : undefined },
+                      { label: "Catch %",  val: pct(s.catchRate),       rank: mode !== "none" ? ranks.catchRate.get(s.id) : undefined },
                     ].map(({ label, val, rank }) => (
                       <div key={label}>
                         <div className="text-xl font-bold flex items-center justify-center">
@@ -412,19 +401,19 @@ export default function StatsPage() {
                   <div className="grid grid-cols-3 gap-2 text-center border-t border-gray-100 pt-3">
                     <div>
                       <div className="text-xl font-bold flex items-center justify-center">
-                        {pct(s.pointsShareOfTeam)}<Medal rank={showRanks ? ranks.pointsShareOfTeam.get(s.id) : undefined} mode={mode} />
+                        {pct(s.pointsShareOfTeam)}<Medal rank={mode !== "none" ? ranks.pointsShareOfTeam.get(s.id) : undefined} mode={mode} />
                       </div>
                       <div className="text-xs text-gray-400">Team Pts %</div>
                     </div>
                     <div>
                       <div className={`text-xl font-bold flex items-center justify-center ${pm.cls}`}>
-                        {pm.text}<Medal rank={showRanks ? ranks.plusMinus.get(s.id) : undefined} mode={mode} />
+                        {pm.text}<Medal rank={mode !== "none" ? ranks.plusMinus.get(s.id) : undefined} mode={mode} />
                       </div>
                       <div className="text-xs text-gray-400">+/-</div>
                     </div>
                     <div>
                       <div className="text-xl font-bold flex items-center justify-center">
-                        {pct(s.defensiveLiability)}<Medal rank={showRanks ? ranks.defensiveLiability.get(s.id) : undefined} mode={mode} />
+                        {pct(s.defensiveLiability)}<Medal rank={mode !== "none" ? ranks.defensiveLiability.get(s.id) : undefined} mode={mode} />
                       </div>
                       <div className="text-xs text-gray-400">Liability %</div>
                     </div>
