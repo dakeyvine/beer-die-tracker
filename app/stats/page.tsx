@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 
 type PlayerStats = {
@@ -217,15 +217,17 @@ export default function StatsPage() {
       {displayed.length > 1 && (
         <div className="flex items-center gap-4 mb-5 flex-wrap">
           <div className="flex rounded-xl border border-gray-200 overflow-hidden text-sm font-medium">
-            {(["best", "worst", "none"] as Mode[]).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setMode(m)}
-                className={`px-4 py-2 capitalize ${mode === m ? "bg-gray-800 text-white" : "bg-white text-gray-500"}`}
-              >
-                {m === "none" ? "None" : m.charAt(0).toUpperCase() + m.slice(1)}
-              </button>
+            {(["best", "worst", "none"] as Mode[]).map((m, i) => (
+              <React.Fragment key={m}>
+                {i > 0 && <div className="w-px bg-gray-200 self-stretch" />}
+                <button
+                  type="button"
+                  onClick={() => setMode(m)}
+                  className={`px-4 py-2 capitalize ${mode === m ? "bg-gray-800 text-white" : "bg-white text-gray-500"}`}
+                >
+                  {m === "none" ? "None" : m.charAt(0).toUpperCase() + m.slice(1)}
+                </button>
+              </React.Fragment>
             ))}
           </div>
           {mode !== "none" && (
