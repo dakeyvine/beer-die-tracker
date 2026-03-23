@@ -124,6 +124,12 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
     setConfirmDeleteId(null);
   }
 
+  async function deleteAdjustment(adjId: string) {
+    await fetch(`/api/games/${gameId}/adjustments/${adjId}`, { method: "DELETE" });
+    setAdjustments((prev) => prev.filter((a) => a.id !== adjId));
+    setConfirmDeleteId(null);
+  }
+
   function openAdjModal(team: "A" | "B") {
     setAdjModal({ team });
     setAdjDelta("");
@@ -489,12 +495,30 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                 const a = item.data;
                 const teamCls = a.team === "A" ? "bg-blue-400" : "bg-red-400";
                 const deltaTxt = a.delta > 0 ? `+${a.delta}` : `${a.delta}`;
+                const isConfirmingAdj = confirmDeleteId === `adj-${a.id}`;
                 return (
-                  <div key={`adj-${a.id}`} className="flex items-center gap-2 text-sm rounded-xl px-2 py-2 bg-purple-50 border border-purple-200">
-                    <span className="text-gray-300 w-5 text-right text-xs">—</span>
-                    <span className={`w-4 h-4 rounded-full flex-shrink-0 ${teamCls}`} />
-                    <span className="font-semibold text-purple-700">{deltaTxt}</span>
-                    <span className="text-purple-500 text-xs truncate">— {a.comment}</span>
+                  <div key={`adj-${a.id}`} className={`flex items-center gap-2 text-sm rounded-xl px-2 py-2 transition-colors ${isConfirmingAdj ? "bg-red-50 border border-red-200" : "bg-purple-50 border border-purple-200"}`}>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeleteId(isConfirmingAdj ? null : `adj-${a.id}`)}
+                      className="flex items-center gap-2 flex-1 min-h-0 text-left"
+                    >
+                      <span className="text-gray-300 w-5 text-right text-xs">—</span>
+                      <span className={`w-4 h-4 rounded-full flex-shrink-0 ${teamCls}`} />
+                      <span className="font-semibold text-purple-700">{deltaTxt}</span>
+                      <span className="text-purple-500 text-xs truncate">— {a.comment}</span>
+                    </button>
+                    {isConfirmingAdj ? (
+                      <button
+                        type="button"
+                        onClick={() => deleteAdjustment(a.id)}
+                        className="text-xs font-semibold text-white bg-red-500 px-3 py-1.5 rounded-lg flex-shrink-0"
+                      >
+                        Delete
+                      </button>
+                    ) : (
+                      <span className="text-purple-200 text-xs flex-shrink-0">✕</span>
+                    )}
                   </div>
                 );
               }
