@@ -19,6 +19,8 @@ type PlayerStats = {
   catchRate: number | null;
   pointsShareOfTeam: number | null;
   defensiveLiability: number | null;
+  offSaveDifficulty: number | null;
+  defSaveDifficulty: number | null;
 };
 
 type Mode = "best" | "worst";
@@ -169,6 +171,8 @@ export default function StatsPage() {
     totalFaults:        computeRanks(displayed, (p) => p.totalFaults, false, mode),
     catchRate:          computeRanks(displayed, (p) => p.catchRate, true, mode),
     defensiveLiability: computeRanks(displayed, (p) => p.defensiveLiability, false, mode),
+    offSaveDifficulty:  computeRanks(displayed, (p) => p.offSaveDifficulty, true, mode),
+    defSaveDifficulty:  computeRanks(displayed, (p) => p.defSaveDifficulty, true, mode),
   };
 
   const medalStyles = mode === "best"
@@ -244,6 +248,7 @@ export default function StatsPage() {
                   <th className="text-center py-2 px-2">Score %</th>
                   <th className="text-center py-2 px-2">Pts</th>
                   <th className="text-center py-2 px-2">Team Pts %</th>
+                  <th className="text-center py-2 px-2">Save Diff</th>
                 </tr>
               </thead>
               <tbody>
@@ -271,6 +276,11 @@ export default function StatsPage() {
                         {pct(s.pointsShareOfTeam)}<Medal rank={ranks.pointsShareOfTeam.get(s.id)} mode={mode} />
                       </span>
                     </td>
+                    <td className="text-center py-3 px-2">
+                      <span className="inline-flex items-center justify-center">
+                        {pct(s.offSaveDifficulty)}<Medal rank={ranks.offSaveDifficulty.get(s.id)} mode={mode} />
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -288,6 +298,7 @@ export default function StatsPage() {
                   <th className="text-center py-2 px-2">Faults</th>
                   <th className="text-center py-2 px-2">Catch %</th>
                   <th className="text-center py-2 px-2">Def. Liability</th>
+                  <th className="text-center py-2 px-2">Save Diff</th>
                 </tr>
               </thead>
               <tbody>
@@ -314,6 +325,11 @@ export default function StatsPage() {
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
                           {pct(s.defensiveLiability)}<Medal rank={ranks.defensiveLiability.get(s.id)} mode={mode} />
+                        </span>
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <span className="inline-flex items-center justify-center">
+                          {pct(s.defSaveDifficulty)}<Medal rank={ranks.defSaveDifficulty.get(s.id)} mode={mode} />
                         </span>
                       </td>
                     </tr>

@@ -13,6 +13,7 @@ type Throw = {
   scoreType: string | null;
   catcherId: string | null;
   faultPlayerId: string | null;
+  saveDifficulty: number | null;
   thrower: Player;
   catcher: Player | null;
   faultPlayer: Player | null;
@@ -25,7 +26,8 @@ type Step =
   | "scored-or-caught"
   | "score-type"
   | "who-caught"
-  | "who-fault";
+  | "who-fault"
+  | "save-difficulty";
 
 function scoreTypePoints(scoreType: string | null): number {
   if (scoreType === "tink") return 2;
@@ -44,6 +46,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
   const [isScored, setIsScored] = useState<boolean | null>(null);
   const [scoreType, setScoreType] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [pendingThrowBody, setPendingThrowBody] = useState<object | null>(null);
 
   useEffect(() => {
     fetch(`/api/games`).then((r) => r.json()).then((games: { id: string; players: GamePlayer[] }[]) => {
@@ -85,6 +88,12 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
     setThrower(null);
     setIsScored(null);
     setScoreType(null);
+    setPendingThrowBody(null);
+  }
+
+  function goToSaveDifficulty(body: object) {
+    setPendingThrowBody(body);
+    setStep("save-difficulty");
   }
 
   async function deleteThrow(throwId: string) {
@@ -291,7 +300,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                   type="button"
                   key={p.id}
                   disabled={saving}
-                  onClick={() => recordThrow({ throwerId: thrower!.id, isHit: true, isScored, catcherId: p.id })}
+                  onClick={() => goToSaveDifficulty({ throwerId: thrower!.id, isHit: true, isScored, catcherId: p.id })}
                   className={`py-4 px-4 rounded-2xl font-medium text-base border ${teamColor(playerTeam(p.id))}`}
                 >
                   {p.name}
@@ -300,7 +309,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
               <button
                 type="button"
                 disabled={saving}
-                onClick={() => recordThrow({ throwerId: thrower!.id, isHit: true, isScored })}
+                onClick={() => goToSaveDifficulty({ throwerId: thrower!.id, isHit: true, isScored })}
                 className="py-4 px-4 bg-gray-50 border border-gray-200 rounded-2xl font-medium text-base col-span-2"
               >
                 Unknown / No one
@@ -321,7 +330,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                   type="button"
                   key={p.id}
                   disabled={saving}
-                  onClick={() => recordThrow({ throwerId: thrower!.id, isHit: true, isScored, scoreType, faultPlayerId: p.id })}
+                  onClick={() => goToSaveDifficulty({ throwerId: thrower!.id, isHit: true, isScored, scoreType, faultPlayerId: p.id })}
                   className={`py-4 px-4 rounded-2xl font-medium text-base border ${teamColor(playerTeam(p.id))}`}
                 >
                   {p.name}
@@ -330,10 +339,57 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
               <button
                 type="button"
                 disabled={saving}
-                onClick={() => recordThrow({ throwerId: thrower!.id, isHit: true, isScored, scoreType })}
+                onClick={() => goToSaveDifficulty({ throwerId: thrower!.id, isHit: true, isScored, scoreType })}
                 className="py-4 px-4 bg-gray-50 border border-gray-200 rounded-2xl font-medium text-base col-span-2"
               >
                 Unknown / No one
+              </button>
+            </div>
+          </>
+        )}
+
+        {step === "save-difficulty" && (
+          <>
+            <div className="flex items-center gap-3 mb-4">
+              <button type="button" onClick={() => setStep(isScored === false ? "who-caught" : "who-fault")} className={backBtn}>← back</button>
+              <p className="text-sm font-semibold text-gray-700">How hard was the save?</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => recordThrow({ ...pendingThrowBody, saveDifficulty: 0 })}
+                className="py-5 rounded-2xl font-bold text-white bg-gray-400 flex flex-col items-center gap-1"
+              >
+                <span className="text-xl">Table</span>
+                <span className="text-xs font-semibold opacity-80">Hit the table</span>
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => recordThrow({ ...pendingThrowBody, saveDifficulty: 1 })}
+                className="py-5 rounded-2xl font-bold text-white bg-green-500 flex flex-col items-center gap-1"
+              >
+                <span className="text-xl">Easy</span>
+                <span className="text-xs font-semibold opacity-80">Routine play</span>
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => recordThrow({ ...pendingThrowBody, saveDifficulty: 2 })}
+                className="py-5 rounded-2xl font-bold text-white bg-amber-400 flex flex-col items-center gap-1"
+              >
+                <span className="text-xl">Medium</span>
+                <span className="text-xs font-semibold opacity-80">Had to work for it</span>
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => recordThrow({ ...pendingThrowBody, saveDifficulty: 3 })}
+                className="py-5 rounded-2xl font-bold text-white bg-red-500 flex flex-col items-center gap-1"
+              >
+                <span className="text-xl">Hard</span>
+                <span className="text-xs font-semibold opacity-80">Exceptional throw</span>
               </button>
             </div>
           </>

@@ -50,6 +50,7 @@ model Throw {
   scoreType     String?  // "regular" (1pt), "tink" (2pt), "sink" (4pt) — set when isScored = true
   catcherId     String?  // set when isScored = false (caught by defense)
   faultPlayerId String?  // set when isScored = true (defender at fault)
+  saveDifficulty Int?    // 0=table, 1=easy, 2=medium, 3=hard — logged on every hit
 
   game        Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
   thrower     Player  @relation("Thrower", fields: [throwerId], references: [id])

@@ -35,6 +35,17 @@ export async function GET() {
     const totalFaults = p.faults.length;
     const defenseOpportunities = totalCatches + totalFaults;
 
+    // --- Save difficulty ---
+    const throwsWithDifficulty = p.throws.filter((t) => t.isHit && t.saveDifficulty !== null);
+    const avgOffSaveDiff = throwsWithDifficulty.length > 0
+      ? throwsWithDifficulty.reduce((s, t) => s + (t.saveDifficulty ?? 0), 0) / throwsWithDifficulty.length
+      : null;
+
+    const defThrows = [...p.catches, ...p.faults].filter((t) => t.saveDifficulty !== null);
+    const avgDefSaveDiff = defThrows.length > 0
+      ? defThrows.reduce((s, t) => s + (t.saveDifficulty ?? 0), 0) / defThrows.length
+      : null;
+
     // --- Per-game team context ---
     let teamTotalPoints = 0;    // sum of all points scored by player's team across games
     let totalPointsAgainst = 0; // sum of all points scored against player's team across games
@@ -72,6 +83,9 @@ export async function GET() {
       // New stats
       pointsShareOfTeam: teamTotalPoints > 0 ? totalPoints / teamTotalPoints : null,
       defensiveLiability: totalPointsAgainst > 0 ? totalFaults / totalPointsAgainst : null,
+      // Save difficulty normalized to 0–100 (max raw = 3)
+      offSaveDifficulty: avgOffSaveDiff !== null ? avgOffSaveDiff / 3 : null,
+      defSaveDifficulty: avgDefSaveDiff !== null ? avgDefSaveDiff / 3 : null,
     };
   });
 
