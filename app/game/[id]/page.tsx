@@ -303,7 +303,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                 <button
                   type="button"
                   onClick={() => { setIsScored(true); setScoreType("regular"); setStep("who-fault"); }}
-                  className="py-5 rounded-2xl font-bold text-white bg-yellow-400 flex flex-col items-center gap-1"
+                  className="py-5 rounded-2xl font-bold text-white bg-green-400 flex flex-col items-center gap-1"
                 >
                   <span className="text-2xl">🍺</span>
                   <span className="text-sm font-semibold">Scored +1</span>
