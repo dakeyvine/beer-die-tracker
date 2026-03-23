@@ -160,6 +160,7 @@ export default function StatsPage() {
   const [stats, setStats] = useState<PlayerStats[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [mode, setMode] = useState<Mode>("best");
+  const [showRanks, setShowRanks] = useState(true);
 
   useEffect(() => {
     fetch("/api/stats")
@@ -214,7 +215,7 @@ export default function StatsPage() {
 
       {/* Mode toggle + legend */}
       {displayed.length > 1 && (
-        <div className="flex items-center gap-4 mb-5">
+        <div className="flex items-center gap-4 mb-5 flex-wrap">
           <div className="flex rounded-xl border border-gray-200 overflow-hidden text-sm font-medium">
             <button
               type="button"
@@ -231,14 +232,23 @@ export default function StatsPage() {
               Worst
             </button>
           </div>
-          <div className="flex gap-3 text-xs text-gray-500">
-            {medalStyles.map(({ cls, label }, i) => (
-              <span key={i} className="flex items-center gap-1">
-                <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full font-black text-xs ${cls}`}>{i + 1}</span>
-                {label}
-              </span>
-            ))}
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowRanks((r) => !r)}
+            className={`flex rounded-xl border border-gray-200 overflow-hidden text-sm font-medium px-4 py-2 ${showRanks ? "bg-gray-800 text-white" : "bg-white text-gray-500"}`}
+          >
+            Ranks
+          </button>
+          {showRanks && (
+            <div className="flex gap-3 text-xs text-gray-500">
+              {medalStyles.map(({ cls, label }, i) => (
+                <span key={i} className="flex items-center gap-1">
+                  <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full font-black text-xs ${cls}`}>{i + 1}</span>
+                  {label}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -260,7 +270,6 @@ export default function StatsPage() {
                   <th className="text-center py-2 px-2 text-gray-300">Tosses</th>
                   <th className="text-center py-2 px-2 text-gray-300">Hits</th>
                   <th className="text-center py-2 px-2">Pts</th>
-                  <th className="text-center py-2 px-2">+/-</th>
                   <th className="text-center py-2 px-2">Save Diff</th>
                   <th className="text-center py-2 px-2">Hit %</th>
                   <th className="text-center py-2 px-2">Conv %</th>
@@ -268,54 +277,46 @@ export default function StatsPage() {
                 </tr>
               </thead>
               <tbody>
-                {displayed.map((s) => {
-                  const pm = pmFmt(s.plusMinus);
-                  return (
+                {displayed.map((s) => (
                     <tr key={s.id} className="border-b border-gray-100">
                       <td className="py-3 pr-3 font-semibold">{s.name}</td>
                       <td className="text-center py-3 px-2 text-gray-400">
                         <span className="inline-flex items-center justify-center">
-                          {s.totalThrows}<Medal rank={ranks.totalThrows.get(s.id)} mode={mode} />
+                          {s.totalThrows}<Medal rank={showRanks ? ranks.totalThrows.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2 text-gray-400">
                         <span className="inline-flex items-center justify-center">
-                          {s.hits}<Medal rank={ranks.hits.get(s.id)} mode={mode} />
+                          {s.hits}<Medal rank={showRanks ? ranks.hits.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2 font-semibold">
                         <span className="inline-flex items-center justify-center">
-                          {s.totalPoints}<Medal rank={ranks.totalPoints.get(s.id)} mode={mode} />
-                        </span>
-                      </td>
-                      <td className="text-center py-3 px-2">
-                        <span className={`inline-flex items-center justify-center ${pm.cls}`}>
-                          {pm.text}<Medal rank={ranks.plusMinus.get(s.id)} mode={mode} />
+                          {s.totalPoints}<Medal rank={showRanks ? ranks.totalPoints.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
-                          {saveDiffFmt(s.offSaveDifficulty)}<Medal rank={ranks.offSaveDifficulty.get(s.id)} mode={mode} />
+                          {saveDiffFmt(s.offSaveDifficulty)}<Medal rank={showRanks ? ranks.offSaveDifficulty.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
-                          {pct(s.hitRate)}<Medal rank={ranks.hitRate.get(s.id)} mode={mode} />
+                          {pct(s.hitRate)}<Medal rank={showRanks ? ranks.hitRate.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
-                          {pct(s.conversionRate)}<Medal rank={ranks.conversionRate.get(s.id)} mode={mode} />
+                          {pct(s.conversionRate)}<Medal rank={showRanks ? ranks.conversionRate.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
-                          {pct(s.pointsShareOfTeam)}<Medal rank={ranks.pointsShareOfTeam.get(s.id)} mode={mode} />
+                          {pct(s.pointsShareOfTeam)}<Medal rank={showRanks ? ranks.pointsShareOfTeam.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                     </tr>
-                  );
-                })}
+                  ))}
               </tbody>
             </table>
           </div>
@@ -333,46 +334,55 @@ export default function StatsPage() {
                   <th className="text-center py-2 px-2">Save Diff</th>
                   <th className="text-center py-2 px-2">Catch %</th>
                   <th className="text-center py-2 px-2">Liability %</th>
+                  <th className="text-center py-2 px-2">+/-</th>
                 </tr>
               </thead>
               <tbody>
                 {[...displayed]
                   .sort((a, b) => (b.catchRate ?? -1) - (a.catchRate ?? -1))
-                  .map((s) => (
+                  .map((s) => {
+                    const pm = pmFmt(s.plusMinus);
+                    return (
                     <tr key={s.id} className="border-b border-gray-100">
                       <td className="py-3 pr-3 font-semibold">{s.name}</td>
                       <td className="text-center py-3 px-2 text-gray-400">
                         <span className="inline-flex items-center justify-center">
-                          {s.totalDefenses}<Medal rank={ranks.totalDefenses.get(s.id)} mode={mode} />
+                          {s.totalDefenses}<Medal rank={showRanks ? ranks.totalDefenses.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
-                          {s.totalCatches}<Medal rank={ranks.totalCatches.get(s.id)} mode={mode} />
+                          {s.totalCatches}<Medal rank={showRanks ? ranks.totalCatches.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
-                          {s.totalFaults}<Medal rank={ranks.totalFaults.get(s.id)} mode={mode} />
+                          {s.totalFaults}<Medal rank={showRanks ? ranks.totalFaults.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
-                          {saveDiffFmt(s.defSaveDifficulty)}<Medal rank={ranks.defSaveDifficulty.get(s.id)} mode={mode} />
+                          {saveDiffFmt(s.defSaveDifficulty)}<Medal rank={showRanks ? ranks.defSaveDifficulty.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
-                          {pct(s.catchRate)}<Medal rank={ranks.catchRate.get(s.id)} mode={mode} />
+                          {pct(s.catchRate)}<Medal rank={showRanks ? ranks.catchRate.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
-                          {pct(s.defensiveLiability)}<Medal rank={ranks.defensiveLiability.get(s.id)} mode={mode} />
+                          {pct(s.defensiveLiability)}<Medal rank={showRanks ? ranks.defensiveLiability.get(s.id) : undefined} mode={mode} />
+                        </span>
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <span className={`inline-flex items-center justify-center ${pm.cls}`}>
+                          {pm.text}<Medal rank={showRanks ? ranks.plusMinus.get(s.id) : undefined} mode={mode} />
                         </span>
                       </td>
                     </tr>
-                  ))}
+                  );
+                  })}
               </tbody>
             </table>
           </div>
@@ -387,9 +397,9 @@ export default function StatsPage() {
                   <div className="font-bold text-lg mb-3">{s.name}</div>
                   <div className="grid grid-cols-3 gap-2 text-center mb-3">
                     {[
-                      { label: "Hit %",    val: pct(s.hitRate),         rank: ranks.hitRate.get(s.id) },
-                      { label: "Conv %",   val: pct(s.conversionRate),  rank: ranks.conversionRate.get(s.id) },
-                      { label: "Catch %",  val: pct(s.catchRate),       rank: ranks.catchRate.get(s.id) },
+                      { label: "Hit %",    val: pct(s.hitRate),         rank: showRanks ? ranks.hitRate.get(s.id) : undefined },
+                      { label: "Conv %",   val: pct(s.conversionRate),  rank: showRanks ? ranks.conversionRate.get(s.id) : undefined },
+                      { label: "Catch %",  val: pct(s.catchRate),       rank: showRanks ? ranks.catchRate.get(s.id) : undefined },
                     ].map(({ label, val, rank }) => (
                       <div key={label}>
                         <div className="text-xl font-bold flex items-center justify-center">
@@ -402,19 +412,19 @@ export default function StatsPage() {
                   <div className="grid grid-cols-3 gap-2 text-center border-t border-gray-100 pt-3">
                     <div>
                       <div className="text-xl font-bold flex items-center justify-center">
-                        {pct(s.pointsShareOfTeam)}<Medal rank={ranks.pointsShareOfTeam.get(s.id)} mode={mode} />
+                        {pct(s.pointsShareOfTeam)}<Medal rank={showRanks ? ranks.pointsShareOfTeam.get(s.id) : undefined} mode={mode} />
                       </div>
                       <div className="text-xs text-gray-400">Team Pts %</div>
                     </div>
                     <div>
                       <div className={`text-xl font-bold flex items-center justify-center ${pm.cls}`}>
-                        {pm.text}<Medal rank={ranks.plusMinus.get(s.id)} mode={mode} />
+                        {pm.text}<Medal rank={showRanks ? ranks.plusMinus.get(s.id) : undefined} mode={mode} />
                       </div>
                       <div className="text-xs text-gray-400">+/-</div>
                     </div>
                     <div>
                       <div className="text-xl font-bold flex items-center justify-center">
-                        {pct(s.defensiveLiability)}<Medal rank={ranks.defensiveLiability.get(s.id)} mode={mode} />
+                        {pct(s.defensiveLiability)}<Medal rank={showRanks ? ranks.defensiveLiability.get(s.id) : undefined} mode={mode} />
                       </div>
                       <div className="text-xs text-gray-400">Liability %</div>
                     </div>
