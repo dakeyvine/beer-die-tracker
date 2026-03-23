@@ -24,12 +24,13 @@ export async function POST(req: Request) {
 
     const game = await prisma.game.create({ data: {} });
 
-    await prisma.gamePlayer.createMany({
-      data: [
-        ...teamA.map((id: string) => ({ gameId: game.id, playerId: id, team: "A" })),
-        ...teamB.map((id: string) => ({ gameId: game.id, playerId: id, team: "B" })),
-      ],
-    });
+    const allPlayers = [
+      ...teamA.map((id: string) => ({ gameId: game.id, playerId: id, team: "A" })),
+      ...teamB.map((id: string) => ({ gameId: game.id, playerId: id, team: "B" })),
+    ];
+    for (const p of allPlayers) {
+      await prisma.gamePlayer.create({ data: p });
+    }
 
     const full = await prisma.game.findUnique({
       where: { id: game.id },
