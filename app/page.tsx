@@ -24,13 +24,13 @@ export default function Home() {
         <div className="flex gap-2">
           <Link
             href="/stats"
-            className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium"
+            className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium flex items-center"
           >
             Stats
           </Link>
           <Link
             href="/game/new"
-            className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium"
+            className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium flex items-center"
           >
             + New Game
           </Link>
