@@ -67,13 +67,24 @@ export default function NewGame() {
     const teamB = roster.filter((r) => r.team === "B").map((r) => r.player.id);
     if (!teamA.length || !teamB.length) return;
     setLoading(true);
-    const res = await fetch("/api/games", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ teamA, teamB }),
-    });
-    const game = await res.json();
-    router.push(`/game/${game.id}`);
+    try {
+      const res = await fetch("/api/games", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamA, teamB }),
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        alert("Error starting game: " + err);
+        setLoading(false);
+        return;
+      }
+      const game = await res.json();
+      router.push(`/game/${game.id}`);
+    } catch (e) {
+      alert("Network error: " + e);
+      setLoading(false);
+    }
   }
 
   const teamA = roster.filter((r) => r.team === "A");
