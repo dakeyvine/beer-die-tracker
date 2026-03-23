@@ -89,7 +89,8 @@ export default function NewGame() {
 
   const teamA = roster.filter((r) => r.team === "A");
   const teamB = roster.filter((r) => r.team === "B");
-  const canStart = teamA.length > 0 && teamB.length > 0;
+  const allAssigned = roster.length > 0 && roster.every((r) => r.team !== null);
+  const canStart = allAssigned && teamA.length > 0 && teamB.length > 0;
 
   function teamBadge(team: "A" | "B" | null, targetTeam: "A" | "B") {
     const active = team === targetTeam;
