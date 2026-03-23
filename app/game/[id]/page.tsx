@@ -222,7 +222,6 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
             onClick={() => openAdjModal("A")}
             className="flex flex-col items-center active:opacity-70"
           >
-            <span className="text-xs font-semibold text-blue-500 uppercase">Team A</span>
             <span className="text-3xl font-black text-blue-600">{teamAScore}</span>
           </button>
           <span className="text-xl text-gray-300 font-light">vs</span>
@@ -231,7 +230,6 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
             onClick={() => openAdjModal("B")}
             className="flex flex-col items-center active:opacity-70"
           >
-            <span className="text-xs font-semibold text-red-500 uppercase">Team B</span>
             <span className="text-3xl font-black text-red-600">{teamBScore}</span>
           </button>
         </div>
@@ -246,7 +244,6 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
           <>
             <p className="text-sm font-semibold text-gray-500 mb-3">Who&apos;s throwing?</p>
             <div className="mb-2">
-              <p className="text-xs text-blue-500 font-semibold uppercase mb-1">Team A</p>
               <div className="grid grid-cols-2 gap-2 mb-3">
                 {teamAPlayers.map((p) => (
                   <button
@@ -259,7 +256,6 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-red-500 font-semibold uppercase mb-1">Team B</p>
               <div className="grid grid-cols-2 gap-2">
                 {teamBPlayers.map((p) => (
                   <button
@@ -280,10 +276,8 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
           <>
             <div className="flex items-center gap-3 mb-4">
               <button type="button" onClick={reset} className={backBtn}>← back</button>
-              <p className="text-sm font-semibold text-gray-700">
-                <span className={`px-2 py-0.5 rounded-full text-xs font-bold mr-1 ${playerTeam(thrower!.id) === "A" ? "bg-blue-100 text-blue-700" : "bg-red-100 text-red-700"}`}>
-                  {playerTeam(thrower!.id) === "A" ? "A" : "B"}
-                </span>
+              <p className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <span className={`w-3 h-3 rounded-full flex-shrink-0 ${playerTeam(thrower!.id) === "A" ? "bg-blue-400" : "bg-red-400"}`} />
                 {thrower?.name} — what happened?
               </p>
             </div>
@@ -325,7 +319,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                 <button
                   type="button"
                   onClick={() => { setIsScored(true); setScoreType("sink"); setStep("who-fault"); }}
-                  className="py-5 rounded-2xl font-bold text-white bg-red-600 flex flex-col items-center gap-1"
+                  className="py-5 rounded-2xl font-bold text-white bg-purple-600 flex flex-col items-center gap-1"
                 >
                   <span className="text-2xl">🌊</span>
                   <span className="text-sm font-semibold">Sink +4</span>
@@ -499,7 +493,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                   <div key={`adj-${a.id}`} className="flex items-center gap-2 text-sm rounded-xl px-2 py-2 bg-purple-50 border border-purple-200">
                     <span className="text-gray-300 w-5 text-right text-xs">—</span>
                     <span className={`w-4 h-4 rounded-full flex-shrink-0 ${teamCls}`} />
-                    <span className="font-semibold text-purple-700">Team {a.team} {deltaTxt}</span>
+                    <span className="font-semibold text-purple-700">{deltaTxt}</span>
                     <span className="text-purple-500 text-xs truncate">— {a.comment}</span>
                   </div>
                 );
@@ -560,7 +554,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
             <h2 className="text-lg font-bold mb-1">Adjust Score</h2>
-            <p className="text-sm text-gray-500 mb-4">Custom ruleset correction for Team {adjModal.team}</p>
+            <p className="text-sm text-gray-500 mb-4">Custom ruleset correction</p>
 
             {/* Team toggle */}
             <div className="flex rounded-xl border border-gray-200 overflow-hidden text-sm font-medium mb-4">
@@ -569,14 +563,16 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                 onClick={() => setAdjModal({ team: "A" })}
                 className={`flex-1 py-2.5 ${adjModal.team === "A" ? "bg-blue-500 text-white" : "bg-white text-gray-500"}`}
               >
-                Team A
+                <span className="inline-block w-3 h-3 rounded-full bg-current opacity-80 mr-1.5 align-middle" style={{ background: adjModal.team === "A" ? "white" : "#60a5fa" }} />
+                Blue
               </button>
               <button
                 type="button"
                 onClick={() => setAdjModal({ team: "B" })}
                 className={`flex-1 py-2.5 ${adjModal.team === "B" ? "bg-red-500 text-white" : "bg-white text-gray-500"}`}
               >
-                Team B
+                <span className="inline-block w-3 h-3 rounded-full mr-1.5 align-middle" style={{ background: adjModal.team === "B" ? "white" : "#f87171" }} />
+                Red
               </button>
             </div>
 
