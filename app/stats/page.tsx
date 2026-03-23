@@ -11,11 +11,12 @@ type PlayerStats = {
   scores: number;
   totalPoints: number;
   tinksAndSinks: number;
-  caughtByDefense: number;
-  hitRate: number | null;
-  scoreRate: number | null;
   totalCatches: number;
   totalFaults: number;
+  totalDefenses: number;
+  plusMinus: number;
+  hitRate: number | null;
+  conversionRate: number | null;
   catchRate: number | null;
   pointsShareOfTeam: number | null;
   defensiveLiability: number | null;
@@ -37,8 +38,6 @@ function computeRanks(
     .map((p) => ({ id: p.id, val: getValue(p)! }));
   if (valid.length < 2) return map;
 
-  // For "best": sort so the best value is first
-  // For "worst": sort so the worst value is first
   const bestFirst = mode === "best" ? higherIsBetter : !higherIsBetter;
   const sorted = [...valid].sort((a, b) => bestFirst ? b.val - a.val : a.val - b.val);
 
@@ -74,6 +73,17 @@ function Medal({ rank, mode }: { rank: 1 | 2 | 3 | undefined; mode: Mode }) {
 function pct(n: number | null) {
   if (n === null) return "—";
   return `${Math.round(n * 100)}%`;
+}
+
+function saveDiffFmt(n: number | null) {
+  if (n === null) return "—";
+  return Math.round((n / 3) * 100).toString();
+}
+
+function pmFmt(n: number) {
+  if (n > 0) return { text: `+${n}`, cls: "text-green-600 font-semibold" };
+  if (n < 0) return { text: `${n}`, cls: "text-red-500 font-semibold" };
+  return { text: "0", cls: "text-gray-400" };
 }
 
 function PlayerFilter({
@@ -164,9 +174,10 @@ export default function StatsPage() {
 
   const ranks = {
     hitRate:            computeRanks(displayed, (p) => p.hitRate, true, mode),
-    scoreRate:          computeRanks(displayed, (p) => p.scoreRate, true, mode),
+    conversionRate:     computeRanks(displayed, (p) => p.conversionRate, true, mode),
     totalPoints:        computeRanks(displayed, (p) => p.totalPoints, true, mode),
     pointsShareOfTeam:  computeRanks(displayed, (p) => p.pointsShareOfTeam, true, mode),
+    plusMinus:          computeRanks(displayed, (p) => p.plusMinus, true, mode),
     totalCatches:       computeRanks(displayed, (p) => p.totalCatches, true, mode),
     totalFaults:        computeRanks(displayed, (p) => p.totalFaults, false, mode),
     catchRate:          computeRanks(displayed, (p) => p.catchRate, true, mode),
@@ -236,69 +247,81 @@ export default function StatsPage() {
 
       {displayed.length > 0 && (
         <>
-          {/* Offense */}
+          {/* Offense: counting stats left, percentages right */}
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Offense</h2>
           <div className="overflow-x-auto mb-8">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-gray-400 border-b border-gray-200">
                   <th className="text-left py-2 pr-3">Player</th>
-                  <th className="text-center py-2 px-2">Throws</th>
-                  <th className="text-center py-2 px-2">Hit %</th>
-                  <th className="text-center py-2 px-2">Score %</th>
+                  <th className="text-center py-2 px-2 text-gray-300">Tosses</th>
+                  <th className="text-center py-2 px-2 text-gray-300">Hits</th>
                   <th className="text-center py-2 px-2">Pts</th>
-                  <th className="text-center py-2 px-2">Team Pts %</th>
+                  <th className="text-center py-2 px-2">+/-</th>
                   <th className="text-center py-2 px-2">Save Diff</th>
+                  <th className="text-center py-2 px-2">Hit %</th>
+                  <th className="text-center py-2 px-2">Conv %</th>
+                  <th className="text-center py-2 px-2">Team Pts %</th>
                 </tr>
               </thead>
               <tbody>
-                {displayed.map((s) => (
-                  <tr key={s.id} className="border-b border-gray-100">
-                    <td className="py-3 pr-3 font-semibold">{s.name}</td>
-                    <td className="text-center py-3 px-2 text-gray-500">{s.totalThrows}</td>
-                    <td className="text-center py-3 px-2">
-                      <span className="inline-flex items-center justify-center">
-                        {pct(s.hitRate)}<Medal rank={ranks.hitRate.get(s.id)} mode={mode} />
-                      </span>
-                    </td>
-                    <td className="text-center py-3 px-2">
-                      <span className="inline-flex items-center justify-center">
-                        {pct(s.scoreRate)}<Medal rank={ranks.scoreRate.get(s.id)} mode={mode} />
-                      </span>
-                    </td>
-                    <td className="text-center py-3 px-2 font-semibold">
-                      <span className="inline-flex items-center justify-center">
-                        {s.totalPoints}<Medal rank={ranks.totalPoints.get(s.id)} mode={mode} />
-                      </span>
-                    </td>
-                    <td className="text-center py-3 px-2">
-                      <span className="inline-flex items-center justify-center">
-                        {pct(s.pointsShareOfTeam)}<Medal rank={ranks.pointsShareOfTeam.get(s.id)} mode={mode} />
-                      </span>
-                    </td>
-                    <td className="text-center py-3 px-2">
-                      <span className="inline-flex items-center justify-center">
-                        {pct(s.offSaveDifficulty)}<Medal rank={ranks.offSaveDifficulty.get(s.id)} mode={mode} />
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {displayed.map((s) => {
+                  const pm = pmFmt(s.plusMinus);
+                  return (
+                    <tr key={s.id} className="border-b border-gray-100">
+                      <td className="py-3 pr-3 font-semibold">{s.name}</td>
+                      <td className="text-center py-3 px-2 text-gray-400">{s.totalThrows}</td>
+                      <td className="text-center py-3 px-2 text-gray-400">{s.hits}</td>
+                      <td className="text-center py-3 px-2 font-semibold">
+                        <span className="inline-flex items-center justify-center">
+                          {s.totalPoints}<Medal rank={ranks.totalPoints.get(s.id)} mode={mode} />
+                        </span>
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <span className={`inline-flex items-center justify-center ${pm.cls}`}>
+                          {pm.text}<Medal rank={ranks.plusMinus.get(s.id)} mode={mode} />
+                        </span>
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <span className="inline-flex items-center justify-center">
+                          {saveDiffFmt(s.offSaveDifficulty)}<Medal rank={ranks.offSaveDifficulty.get(s.id)} mode={mode} />
+                        </span>
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <span className="inline-flex items-center justify-center">
+                          {pct(s.hitRate)}<Medal rank={ranks.hitRate.get(s.id)} mode={mode} />
+                        </span>
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <span className="inline-flex items-center justify-center">
+                          {pct(s.conversionRate)}<Medal rank={ranks.conversionRate.get(s.id)} mode={mode} />
+                        </span>
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <span className="inline-flex items-center justify-center">
+                          {pct(s.pointsShareOfTeam)}<Medal rank={ranks.pointsShareOfTeam.get(s.id)} mode={mode} />
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
-          {/* Defense */}
+          {/* Defense: counting stats left, percentages right */}
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Defense</h2>
           <div className="overflow-x-auto mb-8">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-gray-400 border-b border-gray-200">
                   <th className="text-left py-2 pr-3">Player</th>
+                  <th className="text-center py-2 px-2 text-gray-300">Defenses</th>
                   <th className="text-center py-2 px-2">Catches</th>
                   <th className="text-center py-2 px-2">Faults</th>
-                  <th className="text-center py-2 px-2">Catch %</th>
-                  <th className="text-center py-2 px-2">Def. Liability</th>
                   <th className="text-center py-2 px-2">Save Diff</th>
+                  <th className="text-center py-2 px-2">Catch %</th>
+                  <th className="text-center py-2 px-2">Liability %</th>
                 </tr>
               </thead>
               <tbody>
@@ -307,6 +330,7 @@ export default function StatsPage() {
                   .map((s) => (
                     <tr key={s.id} className="border-b border-gray-100">
                       <td className="py-3 pr-3 font-semibold">{s.name}</td>
+                      <td className="text-center py-3 px-2 text-gray-400">{s.totalDefenses}</td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
                           {s.totalCatches}<Medal rank={ranks.totalCatches.get(s.id)} mode={mode} />
@@ -319,17 +343,17 @@ export default function StatsPage() {
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
+                          {saveDiffFmt(s.defSaveDifficulty)}<Medal rank={ranks.defSaveDifficulty.get(s.id)} mode={mode} />
+                        </span>
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <span className="inline-flex items-center justify-center">
                           {pct(s.catchRate)}<Medal rank={ranks.catchRate.get(s.id)} mode={mode} />
                         </span>
                       </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
                           {pct(s.defensiveLiability)}<Medal rank={ranks.defensiveLiability.get(s.id)} mode={mode} />
-                        </span>
-                      </td>
-                      <td className="text-center py-3 px-2">
-                        <span className="inline-flex items-center justify-center">
-                          {pct(s.defSaveDifficulty)}<Medal rank={ranks.defSaveDifficulty.get(s.id)} mode={mode} />
                         </span>
                       </td>
                     </tr>
@@ -341,41 +365,51 @@ export default function StatsPage() {
           {/* Player cards */}
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Player Cards</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {displayed.map((s) => (
-              <div key={s.id} className="bg-white border border-gray-200 rounded-2xl p-4">
-                <div className="font-bold text-lg mb-3">{s.name}</div>
-                <div className="grid grid-cols-3 gap-2 text-center mb-3">
-                  {[
-                    { label: "Hit Rate",   val: pct(s.hitRate),   rank: ranks.hitRate.get(s.id) },
-                    { label: "Score Rate", val: pct(s.scoreRate), rank: ranks.scoreRate.get(s.id) },
-                    { label: "Catch Rate", val: pct(s.catchRate), rank: ranks.catchRate.get(s.id) },
-                  ].map(({ label, val, rank }) => (
-                    <div key={label}>
-                      <div className="text-xl font-bold flex items-center justify-center">
-                        {val}<Medal rank={rank} mode={mode} />
+            {displayed.map((s) => {
+              const pm = pmFmt(s.plusMinus);
+              return (
+                <div key={s.id} className="bg-white border border-gray-200 rounded-2xl p-4">
+                  <div className="font-bold text-lg mb-3">{s.name}</div>
+                  <div className="grid grid-cols-3 gap-2 text-center mb-3">
+                    {[
+                      { label: "Hit %",    val: pct(s.hitRate),         rank: ranks.hitRate.get(s.id) },
+                      { label: "Conv %",   val: pct(s.conversionRate),  rank: ranks.conversionRate.get(s.id) },
+                      { label: "Catch %",  val: pct(s.catchRate),       rank: ranks.catchRate.get(s.id) },
+                    ].map(({ label, val, rank }) => (
+                      <div key={label}>
+                        <div className="text-xl font-bold flex items-center justify-center">
+                          {val}<Medal rank={rank} mode={mode} />
+                        </div>
+                        <div className="text-xs text-gray-400">{label}</div>
                       </div>
-                      <div className="text-xs text-gray-400">{label}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-center border-t border-gray-100 pt-3">
-                  {[
-                    { label: "Team Pts %",     val: pct(s.pointsShareOfTeam),  rank: ranks.pointsShareOfTeam.get(s.id) },
-                    { label: "Def. Liability", val: pct(s.defensiveLiability), rank: ranks.defensiveLiability.get(s.id) },
-                  ].map(({ label, val, rank }) => (
-                    <div key={label}>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center border-t border-gray-100 pt-3">
+                    <div>
                       <div className="text-xl font-bold flex items-center justify-center">
-                        {val}<Medal rank={rank} mode={mode} />
+                        {pct(s.pointsShareOfTeam)}<Medal rank={ranks.pointsShareOfTeam.get(s.id)} mode={mode} />
                       </div>
-                      <div className="text-xs text-gray-400">{label}</div>
+                      <div className="text-xs text-gray-400">Team Pts %</div>
                     </div>
-                  ))}
+                    <div>
+                      <div className={`text-xl font-bold flex items-center justify-center ${pm.cls}`}>
+                        {pm.text}<Medal rank={ranks.plusMinus.get(s.id)} mode={mode} />
+                      </div>
+                      <div className="text-xs text-gray-400">+/-</div>
+                    </div>
+                    <div>
+                      <div className="text-xl font-bold flex items-center justify-center">
+                        {pct(s.defensiveLiability)}<Medal rank={ranks.defensiveLiability.get(s.id)} mode={mode} />
+                      </div>
+                      <div className="text-xs text-gray-400">Liability %</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 text-xs text-gray-400 text-center">
+                    {s.totalThrows} tosses · {s.totalPoints} pts · {s.tinksAndSinks} tinks/sinks
+                  </div>
                 </div>
-                <div className="mt-3 text-xs text-gray-400 text-center">
-                  {s.totalThrows} throws · {s.totalPoints} pts · {s.tinksAndSinks} tinks/sinks
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}

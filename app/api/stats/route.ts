@@ -28,27 +28,26 @@ export async function GET() {
     const scores = scoredThrows.length;
     const totalPoints = scoredThrows.reduce((sum, t) => sum + scoreTypePoints(t.scoreType), 0);
     const tinksAndSinks = scoredThrows.filter((t) => t.scoreType === "tink" || t.scoreType === "sink").length;
-    const caughtByDefense = p.throws.filter((t) => t.isScored === false && t.isHit).length;
 
     // --- Defensive ---
     const totalCatches = p.catches.length;
     const totalFaults = p.faults.length;
-    const defenseOpportunities = totalCatches + totalFaults;
+    const totalDefenses = totalCatches + totalFaults; // times thrown at
 
-    // --- Save difficulty ---
+    // --- Save difficulty (raw 0–3 scale) ---
     const throwsWithDifficulty = p.throws.filter((t) => t.isHit && t.saveDifficulty !== null);
-    const avgOffSaveDiff = throwsWithDifficulty.length > 0
+    const offSaveDifficulty = throwsWithDifficulty.length > 0
       ? throwsWithDifficulty.reduce((s, t) => s + (t.saveDifficulty ?? 0), 0) / throwsWithDifficulty.length
       : null;
 
     const defThrows = [...p.catches, ...p.faults].filter((t) => t.saveDifficulty !== null);
-    const avgDefSaveDiff = defThrows.length > 0
+    const defSaveDifficulty = defThrows.length > 0
       ? defThrows.reduce((s, t) => s + (t.saveDifficulty ?? 0), 0) / defThrows.length
       : null;
 
     // --- Per-game team context ---
-    let teamTotalPoints = 0;    // sum of all points scored by player's team across games
-    let totalPointsAgainst = 0; // sum of all points scored against player's team across games
+    let teamTotalPoints = 0;
+    let totalPointsAgainst = 0;
 
     for (const game of games) {
       const playerEntry = game.players.find((gp) => gp.playerId === p.id);
@@ -74,18 +73,17 @@ export async function GET() {
       scores,
       totalPoints,
       tinksAndSinks,
-      caughtByDefense,
-      hitRate: totalThrows > 0 ? hits / totalThrows : null,
-      scoreRate: hits > 0 ? scores / hits : null,
       totalCatches,
       totalFaults,
-      catchRate: defenseOpportunities > 0 ? totalCatches / defenseOpportunities : null,
-      // New stats
+      totalDefenses,
+      plusMinus: scores - totalFaults,
+      hitRate: totalThrows > 0 ? hits / totalThrows : null,
+      conversionRate: hits > 0 ? scores / hits : null,
+      catchRate: totalDefenses > 0 ? totalCatches / totalDefenses : null,
       pointsShareOfTeam: teamTotalPoints > 0 ? totalPoints / teamTotalPoints : null,
       defensiveLiability: totalPointsAgainst > 0 ? totalFaults / totalPointsAgainst : null,
-      // Save difficulty normalized to 0–100 (max raw = 3)
-      offSaveDifficulty: avgOffSaveDiff !== null ? avgOffSaveDiff / 3 : null,
-      defSaveDifficulty: avgDefSaveDiff !== null ? avgDefSaveDiff / 3 : null,
+      offSaveDifficulty,
+      defSaveDifficulty,
     };
   });
 
