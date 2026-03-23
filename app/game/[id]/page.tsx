@@ -291,7 +291,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                 {thrower?.name} — what happened?
               </p>
             </div>
-            <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 disabled={saving}
@@ -301,50 +301,48 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                 <span className="text-2xl">❌</span>
                 <span className="text-sm font-semibold">Miss</span>
               </button>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => { setIsScored(false); setStep("who-caught"); }}
-                  className="py-5 rounded-2xl font-bold text-white bg-blue-500 flex flex-col items-center gap-1"
-                >
-                  <span className="text-2xl">🤙</span>
-                  <span className="text-sm font-semibold">Caught</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => recordThrow({ throwerId: thrower!.id, isHit: true, isScored: false })}
-                  className="py-5 rounded-2xl font-bold text-white bg-gray-400 flex flex-col items-center gap-1"
-                >
-                  <span className="text-2xl">🏓</span>
-                  <span className="text-sm font-semibold">Table</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setIsScored(true); setScoreType("regular"); setStep("who-fault"); }}
-                  className="py-5 rounded-2xl font-bold text-white bg-green-400 flex flex-col items-center gap-1"
-                >
-                  <span className="text-2xl">🍺</span>
-                  <span className="text-sm font-semibold">Scored +1</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setIsScored(true); setScoreType("tink"); setStep("who-fault"); }}
-                  className="py-5 rounded-2xl font-bold text-white bg-orange-500 flex flex-col items-center gap-1"
-                >
-                  <span className="text-2xl">💥</span>
-                  <span className="text-sm font-semibold">Tink +2</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => recordThrow({ throwerId: thrower!.id, isHit: true, isScored: true, scoreType: "sink", saveDifficulty: 3 })}
-                  className="py-5 rounded-2xl font-bold text-white bg-purple-600 col-span-2 flex flex-col items-center gap-1"
-                >
-                  <span className="text-2xl">🌊</span>
-                  <span className="text-sm font-semibold">Sink +4</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => { setIsScored(true); setScoreType("regular"); setStep("who-fault"); }}
+                className="py-5 rounded-2xl font-bold text-white bg-green-400 flex flex-col items-center gap-1"
+              >
+                <span className="text-2xl">🍺</span>
+                <span className="text-sm font-semibold">Hit +1</span>
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => recordThrow({ throwerId: thrower!.id, isHit: true, isScored: false })}
+                className="py-5 rounded-2xl font-bold text-white bg-gray-400 flex flex-col items-center gap-1"
+              >
+                <span className="text-2xl">⬇️</span>
+                <span className="text-sm font-semibold">Table</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setIsScored(true); setScoreType("tink"); setStep("who-fault"); }}
+                className="py-5 rounded-2xl font-bold text-white bg-orange-500 flex flex-col items-center gap-1"
+              >
+                <span className="text-2xl">💥</span>
+                <span className="text-sm font-semibold">Tink +2</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setIsScored(false); setStep("who-caught"); }}
+                className="py-5 rounded-2xl font-bold text-white bg-blue-500 flex flex-col items-center gap-1"
+              >
+                <span className="text-2xl">🤙</span>
+                <span className="text-sm font-semibold">Caught</span>
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => recordThrow({ throwerId: thrower!.id, isHit: true, isScored: true, scoreType: "sink", saveDifficulty: 3 })}
+                className="py-5 rounded-2xl font-bold text-white bg-purple-600 flex flex-col items-center gap-1"
+              >
+                <span className="text-2xl">🌊</span>
+                <span className="text-sm font-semibold">Sink +4</span>
+              </button>
             </div>
           </>
         )}
