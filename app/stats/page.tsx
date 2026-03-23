@@ -173,6 +173,9 @@ export default function StatsPage() {
   const displayed = stats.filter((s) => selectedIds.has(s.id));
 
   const ranks = {
+    totalThrows:        computeRanks(displayed, (p) => p.totalThrows, true, mode),
+    hits:               computeRanks(displayed, (p) => p.hits, true, mode),
+    totalDefenses:      computeRanks(displayed, (p) => p.totalDefenses, true, mode),
     hitRate:            computeRanks(displayed, (p) => p.hitRate, true, mode),
     conversionRate:     computeRanks(displayed, (p) => p.conversionRate, true, mode),
     totalPoints:        computeRanks(displayed, (p) => p.totalPoints, true, mode),
@@ -270,8 +273,16 @@ export default function StatsPage() {
                   return (
                     <tr key={s.id} className="border-b border-gray-100">
                       <td className="py-3 pr-3 font-semibold">{s.name}</td>
-                      <td className="text-center py-3 px-2 text-gray-400">{s.totalThrows}</td>
-                      <td className="text-center py-3 px-2 text-gray-400">{s.hits}</td>
+                      <td className="text-center py-3 px-2 text-gray-400">
+                        <span className="inline-flex items-center justify-center">
+                          {s.totalThrows}<Medal rank={ranks.totalThrows.get(s.id)} mode={mode} />
+                        </span>
+                      </td>
+                      <td className="text-center py-3 px-2 text-gray-400">
+                        <span className="inline-flex items-center justify-center">
+                          {s.hits}<Medal rank={ranks.hits.get(s.id)} mode={mode} />
+                        </span>
+                      </td>
                       <td className="text-center py-3 px-2 font-semibold">
                         <span className="inline-flex items-center justify-center">
                           {s.totalPoints}<Medal rank={ranks.totalPoints.get(s.id)} mode={mode} />
@@ -330,7 +341,11 @@ export default function StatsPage() {
                   .map((s) => (
                     <tr key={s.id} className="border-b border-gray-100">
                       <td className="py-3 pr-3 font-semibold">{s.name}</td>
-                      <td className="text-center py-3 px-2 text-gray-400">{s.totalDefenses}</td>
+                      <td className="text-center py-3 px-2 text-gray-400">
+                        <span className="inline-flex items-center justify-center">
+                          {s.totalDefenses}<Medal rank={ranks.totalDefenses.get(s.id)} mode={mode} />
+                        </span>
+                      </td>
                       <td className="text-center py-3 px-2">
                         <span className="inline-flex items-center justify-center">
                           {s.totalCatches}<Medal rank={ranks.totalCatches.get(s.id)} mode={mode} />
