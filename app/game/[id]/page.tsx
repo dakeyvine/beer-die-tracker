@@ -125,7 +125,11 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
   }
 
   async function deleteAdjustment(adjId: string) {
-    await fetch(`/api/games/${gameId}/adjustments/${adjId}`, { method: "DELETE" });
+    const res = await fetch(`/api/games/${gameId}/adjustments/${adjId}`, { method: "DELETE" });
+    if (!res.ok) {
+      alert("Error deleting adjustment: " + await res.text());
+      return;
+    }
     setAdjustments((prev) => prev.filter((a) => a.id !== adjId));
     setConfirmDeleteId(null);
   }
