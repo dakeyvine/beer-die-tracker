@@ -16,6 +16,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   // Body: { teamA: string[], teamB: string[] } (player ids)
+  try {
   const { teamA, teamB } = await req.json();
   if (!teamA?.length || !teamB?.length) {
     return NextResponse.json({ error: "Both teams need at least 1 player" }, { status: 400 });
@@ -36,4 +37,8 @@ export async function POST(req: Request) {
   });
 
   return NextResponse.json(game, { status: 201 });
+  } catch (e) {
+    console.error("POST /api/games error:", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
