@@ -328,7 +328,8 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setIsScored(true); setScoreType("sink"); setStep("who-fault"); }}
+                  disabled={saving}
+                  onClick={() => recordThrow({ throwerId: thrower!.id, isHit: true, isScored: true, scoreType: "sink", saveDifficulty: 3 })}
                   className="py-5 rounded-2xl font-bold text-white bg-purple-600 flex flex-col items-center gap-1"
                 >
                   <span className="text-2xl">🌊</span>
@@ -357,14 +358,6 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                   {p.name}
                 </button>
               ))}
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => goToSaveDifficulty({ throwerId: thrower!.id, isHit: true, isScored })}
-                className="py-4 px-4 bg-gray-50 border border-gray-200 rounded-2xl font-medium text-base col-span-2"
-              >
-                Unknown / No one
-              </button>
             </div>
           </>
         )}
@@ -390,10 +383,10 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
               <button
                 type="button"
                 disabled={saving}
-                onClick={() => goToSaveDifficulty({ throwerId: thrower!.id, isHit: true, isScored, scoreType })}
+                onClick={() => goToSaveDifficulty({ throwerId: thrower!.id, isHit: true, isScored, scoreType, sharedFault: true })}
                 className="py-4 px-4 bg-gray-50 border border-gray-200 rounded-2xl font-medium text-base col-span-2"
               >
-                Unknown / No one
+                Both / Unknown
               </button>
             </div>
           </>

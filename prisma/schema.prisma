@@ -63,6 +63,7 @@ model Throw {
   catcherId     String?  // set when isScored = false (caught by defense)
   faultPlayerId String?  // set when isScored = true (defender at fault)
   saveDifficulty Int?    // 0=table, 1=easy, 2=medium, 3=hard — logged on every hit
+  sharedFault    Boolean @default(false) // true when fault is split across all defenders
 
   game        Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
   thrower     Player  @relation("Thrower", fields: [throwerId], references: [id])

@@ -25,7 +25,7 @@ export async function POST(
   const { id: gameId } = await params;
   const body = await req.json();
 
-  const { throwerId, isHit, isScored, scoreType, catcherId, faultPlayerId, saveDifficulty } = body;
+  const { throwerId, isHit, isScored, scoreType, catcherId, faultPlayerId, saveDifficulty, sharedFault } = body;
 
   if (!throwerId || isHit === undefined) {
     return NextResponse.json({ error: "throwerId and isHit are required" }, { status: 400 });
@@ -42,6 +42,7 @@ export async function POST(
         catcherId: isHit && !isScored ? catcherId ?? null : null,
         faultPlayerId: isHit && isScored ? faultPlayerId ?? null : null,
         saveDifficulty: isHit && saveDifficulty !== undefined ? saveDifficulty : null,
+        sharedFault: isHit && isScored ? (sharedFault ?? false) : false,
       },
     });
 
