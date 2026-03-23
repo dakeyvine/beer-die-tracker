@@ -22,9 +22,7 @@ type Throw = {
 
 type Step =
   | "select-thrower"
-  | "hit-or-miss"
-  | "scored-or-caught"
-  | "score-type"
+  | "outcome"
   | "who-caught"
   | "who-fault"
   | "save-difficulty";
@@ -182,7 +180,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                   <button
                     type="button"
                     key={p.id}
-                    onClick={() => { setThrower(p); setStep("hit-or-miss"); }}
+                    onClick={() => { setThrower(p); setStep("outcome"); }}
                     className="py-4 px-4 bg-blue-50 border border-blue-300 text-blue-800 rounded-2xl font-medium text-base"
                   >
                     {p.name}
@@ -195,7 +193,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                   <button
                     type="button"
                     key={p.id}
-                    onClick={() => { setThrower(p); setStep("hit-or-miss"); }}
+                    onClick={() => { setThrower(p); setStep("outcome"); }}
                     className="py-4 px-4 bg-red-50 border border-red-300 text-red-800 rounded-2xl font-medium text-base"
                   >
                     {p.name}
@@ -206,7 +204,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
           </>
         )}
 
-        {step === "hit-or-miss" && (
+        {step === "outcome" && (
           <>
             <div className="flex items-center gap-3 mb-4">
               <button type="button" onClick={reset} className={backBtn}>← back</button>
@@ -214,86 +212,53 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                 <span className={`px-2 py-0.5 rounded-full text-xs font-bold mr-1 ${playerTeam(thrower!.id) === "A" ? "bg-blue-100 text-blue-700" : "bg-red-100 text-red-700"}`}>
                   {playerTeam(thrower!.id) === "A" ? "A" : "B"}
                 </span>
-                {thrower?.name} — hit or miss?
+                {thrower?.name} — what happened?
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => setStep("scored-or-caught")}
-                className={`${bigBtn} bg-green-500`}
-              >
-                HIT ✅
-              </button>
+            <div className="flex flex-col gap-3">
               <button
                 type="button"
                 disabled={saving}
                 onClick={() => recordThrow({ throwerId: thrower!.id, isHit: false, isScored: null })}
-                className={`${bigBtn} bg-red-400`}
+                className="py-5 rounded-2xl font-bold text-white bg-red-400 flex flex-col items-center gap-1"
               >
-                MISS ❌
+                <span className="text-2xl">❌</span>
+                <span className="text-sm font-semibold">Miss</span>
               </button>
-            </div>
-          </>
-        )}
-
-        {step === "scored-or-caught" && (
-          <>
-            <div className="flex items-center gap-3 mb-4">
-              <button type="button" onClick={() => setStep("hit-or-miss")} className={backBtn}>← back</button>
-              <p className="text-sm font-semibold text-gray-700">Hit! Did it score?</p>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => { setIsScored(true); setStep("score-type"); }}
-                className={`${bigBtn} bg-yellow-400`}
-              >
-                SCORED 🍺
-              </button>
-              <button
-                type="button"
-                onClick={() => { setIsScored(false); setStep("who-caught"); }}
-                className={`${bigBtn} bg-blue-500`}
-              >
-                CAUGHT 🤙
-              </button>
-            </div>
-          </>
-        )}
-
-        {step === "score-type" && (
-          <>
-            <div className="flex items-center gap-3 mb-4">
-              <button type="button" onClick={() => setStep("scored-or-caught")} className={backBtn}>← back</button>
-              <p className="text-sm font-semibold text-gray-700">What kind of score?</p>
-            </div>
-            <div className="grid grid-cols-3 gap-3 mb-3">
-              <button
-                type="button"
-                onClick={() => { setScoreType("regular"); setStep("who-fault"); }}
-                className="py-5 rounded-2xl font-bold text-white bg-yellow-400 flex flex-col items-center gap-1"
-              >
-                <span className="text-2xl">1</span>
-                <span className="text-xs font-semibold">Regular</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => { setScoreType("tink"); setStep("who-fault"); }}
-                className="py-5 rounded-2xl font-bold text-white bg-orange-500 flex flex-col items-center gap-1"
-              >
-                <span className="text-2xl">2</span>
-                <span className="text-xs font-semibold">Tink</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => { setScoreType("sink"); setStep("who-fault"); }}
-                className="py-5 rounded-2xl font-bold text-white bg-red-600 flex flex-col items-center gap-1"
-              >
-                <span className="text-2xl">4</span>
-                <span className="text-xs font-semibold">Sink</span>
-              </button>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setIsScored(false); setStep("who-caught"); }}
+                  className="py-5 rounded-2xl font-bold text-white bg-blue-500 flex flex-col items-center gap-1"
+                >
+                  <span className="text-2xl">🤙</span>
+                  <span className="text-sm font-semibold">Caught</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setIsScored(true); setScoreType("regular"); setStep("who-fault"); }}
+                  className="py-5 rounded-2xl font-bold text-white bg-yellow-400 flex flex-col items-center gap-1"
+                >
+                  <span className="text-2xl">🍺</span>
+                  <span className="text-sm font-semibold">Scored +1</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setIsScored(true); setScoreType("tink"); setStep("who-fault"); }}
+                  className="py-5 rounded-2xl font-bold text-white bg-orange-500 flex flex-col items-center gap-1"
+                >
+                  <span className="text-2xl">💥</span>
+                  <span className="text-sm font-semibold">Tink +2</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setIsScored(true); setScoreType("sink"); setStep("who-fault"); }}
+                  className="py-5 rounded-2xl font-bold text-white bg-red-600 flex flex-col items-center gap-1"
+                >
+                  <span className="text-2xl">🌊</span>
+                  <span className="text-sm font-semibold">Sink +4</span>
+                </button>
+              </div>
             </div>
           </>
         )}
@@ -301,7 +266,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
         {step === "who-caught" && (
           <>
             <div className="flex items-center gap-3 mb-3">
-              <button type="button" onClick={() => setStep("scored-or-caught")} className={backBtn}>← back</button>
+              <button type="button" onClick={() => setStep("outcome")} className={backBtn}>← back</button>
               <p className="text-sm font-semibold text-gray-700">Who caught it?</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -331,7 +296,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
         {step === "who-fault" && (
           <>
             <div className="flex items-center gap-3 mb-3">
-              <button type="button" onClick={() => setStep("score-type")} className={backBtn}>← back</button>
+              <button type="button" onClick={() => setStep("outcome")} className={backBtn}>← back</button>
               <p className="text-sm font-semibold text-gray-700">Who was at fault?</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -372,7 +337,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                 className="py-5 rounded-2xl font-bold text-white bg-gray-400 flex flex-col items-center gap-1"
               >
                 <span className="text-xl">Table</span>
-                <span className="text-xs font-semibold opacity-80">Hit the table</span>
+                <span className="text-xs font-semibold opacity-80">Stayed on the table</span>
               </button>
               <button
                 type="button"
@@ -399,7 +364,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                 className="py-5 rounded-2xl font-bold text-white bg-red-500 flex flex-col items-center gap-1"
               >
                 <span className="text-xl">Hard</span>
-                <span className="text-xs font-semibold opacity-80">Exceptional throw</span>
+                <span className="text-xs font-semibold opacity-80">Exceptional toss</span>
               </button>
             </div>
           </>
