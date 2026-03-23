@@ -312,6 +312,15 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                 </button>
                 <button
                   type="button"
+                  disabled={saving}
+                  onClick={() => recordThrow({ throwerId: thrower!.id, isHit: true, isScored: false })}
+                  className="py-5 rounded-2xl font-bold text-white bg-gray-400 flex flex-col items-center gap-1"
+                >
+                  <span className="text-2xl">🏓</span>
+                  <span className="text-sm font-semibold">Table</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => { setIsScored(true); setScoreType("regular"); setStep("who-fault"); }}
                   className="py-5 rounded-2xl font-bold text-white bg-green-400 flex flex-col items-center gap-1"
                 >
@@ -330,7 +339,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                   type="button"
                   disabled={saving}
                   onClick={() => recordThrow({ throwerId: thrower!.id, isHit: true, isScored: true, scoreType: "sink", saveDifficulty: 3 })}
-                  className="py-5 rounded-2xl font-bold text-white bg-purple-600 flex flex-col items-center gap-1"
+                  className="py-5 rounded-2xl font-bold text-white bg-purple-600 col-span-2 flex flex-col items-center gap-1"
                 >
                   <span className="text-2xl">🌊</span>
                   <span className="text-sm font-semibold">Sink +4</span>
@@ -398,16 +407,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
               <button type="button" onClick={() => setStep(isScored === false ? "who-caught" : "who-fault")} className={backBtn}>← back</button>
               <p className="text-sm font-semibold text-gray-700">How hard was the save?</p>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => recordThrow({ ...pendingThrowBody, saveDifficulty: 0 })}
-                className="py-5 rounded-2xl font-bold text-white bg-gray-400 flex flex-col items-center gap-1"
-              >
-                <span className="text-xl">Table</span>
-                <span className="text-xs font-semibold opacity-80">Stayed on the table</span>
-              </button>
+            <div className="flex flex-col gap-3">
               <button
                 type="button"
                 disabled={saving}
