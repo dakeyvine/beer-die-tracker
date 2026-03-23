@@ -23,8 +23,20 @@ model Game {
   playedAt  DateTime @default(now())
   createdAt DateTime @default(now())
 
-  players GamePlayer[]
-  throws  Throw[]
+  players     GamePlayer[]
+  throws      Throw[]
+  adjustments GameAdjustment[]
+}
+
+model GameAdjustment {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  gameId    String
+  team      String   // "A" or "B"
+  delta     Int      // points to add (can be negative)
+  comment   String
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
 }
 
 model GamePlayer {

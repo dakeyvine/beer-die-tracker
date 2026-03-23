@@ -19,6 +19,13 @@ type Throw = {
   faultPlayer: Player | null;
   createdAt: string;
 };
+type Adjustment = {
+  id: string;
+  createdAt: string;
+  team: string;
+  delta: number;
+  comment: string;
+};
 
 type Step =
   | "select-thrower"
@@ -38,6 +45,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
 
   const [gamePlayers, setGamePlayers] = useState<GamePlayer[]>([]);
   const [throws, setThrows] = useState<Throw[]>([]);
+  const [adjustments, setAdjustments] = useState<Adjustment[]>([]);
   const [step, setStep] = useState<Step>("select-thrower");
   const [thrower, setThrower] = useState<Player | null>(null);
   const [saving, setSaving] = useState(false);
@@ -46,12 +54,19 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [pendingThrowBody, setPendingThrowBody] = useState<object | null>(null);
 
+  // Adjustment modal state
+  const [adjModal, setAdjModal] = useState<{ team: "A" | "B" } | null>(null);
+  const [adjDelta, setAdjDelta] = useState("");
+  const [adjComment, setAdjComment] = useState("");
+  const [adjSaving, setAdjSaving] = useState(false);
+
   useEffect(() => {
     fetch(`/api/games`).then((r) => r.json()).then((games: { id: string; players: GamePlayer[] }[]) => {
       const g = games.find((g) => g.id === gameId);
       if (g) setGamePlayers(g.players);
     });
     fetch(`/api/games/${gameId}/throws`).then((r) => r.json()).then(setThrows);
+    fetch(`/api/games/${gameId}/adjustments`).then((r) => r.json()).then(setAdjustments);
   }, [gameId]);
 
   const teamAPlayers = gamePlayers.filter((gp) => gp.team === "A").map((gp) => gp.player);
@@ -63,7 +78,6 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
     return gp ? (gp.team as "A" | "B") : null;
   }
 
-  // Opposing team players (for defense selections)
   const opposingTeamPlayers = thrower
     ? playerTeam(thrower.id) === "A" ? teamBPlayers : teamAPlayers
     : [];
@@ -110,13 +124,48 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
     setConfirmDeleteId(null);
   }
 
-  // Live score: sum points for each team's throws that scored
-  const teamAScore = throws
+  function openAdjModal(team: "A" | "B") {
+    setAdjModal({ team });
+    setAdjDelta("");
+    setAdjComment("");
+  }
+
+  async function submitAdjustment() {
+    if (!adjModal || !adjDelta || !adjComment.trim()) return;
+    const delta = parseInt(adjDelta, 10);
+    if (isNaN(delta) || delta === 0) return;
+    setAdjSaving(true);
+    try {
+      const res = await fetch(`/api/games/${gameId}/adjustments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ team: adjModal.team, delta, comment: adjComment.trim() }),
+      });
+      if (!res.ok) {
+        alert("Error saving adjustment: " + await res.text());
+        return;
+      }
+      const adj = await res.json();
+      setAdjustments((prev) => [...prev, adj]);
+      setAdjModal(null);
+    } catch (e) {
+      alert("Network error: " + e);
+    } finally {
+      setAdjSaving(false);
+    }
+  }
+
+  // Live score
+  const teamAThrowScore = throws
     .filter((t) => t.isScored === true && playerTeam(t.throwerId) === "A")
     .reduce((sum, t) => sum + scoreTypePoints(t.scoreType), 0);
-  const teamBScore = throws
+  const teamBThrowScore = throws
     .filter((t) => t.isScored === true && playerTeam(t.throwerId) === "B")
     .reduce((sum, t) => sum + scoreTypePoints(t.scoreType), 0);
+  const teamAAdjScore = adjustments.filter((a) => a.team === "A").reduce((s, a) => s + a.delta, 0);
+  const teamBAdjScore = adjustments.filter((a) => a.team === "B").reduce((s, a) => s + a.delta, 0);
+  const teamAScore = teamAThrowScore + teamAAdjScore;
+  const teamBScore = teamBThrowScore + teamBAdjScore;
 
   function pct(n: number, d: number) {
     if (d === 0) return "—";
@@ -135,7 +184,19 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
     return { ...p, team, total: myThrows.length, hits, scores, points, catches, faults };
   });
 
-  // Shared button styles
+  // Merged log: throws + adjustments sorted by createdAt descending
+  type LogItem =
+    | { kind: "throw"; data: Throw }
+    | { kind: "adj"; data: Adjustment };
+
+  const logItems: LogItem[] = [
+    ...throws.map((t): LogItem => ({ kind: "throw", data: t })),
+    ...adjustments.map((a): LogItem => ({ kind: "adj", data: a })),
+  ].sort((a, b) =>
+    new Date(b.kind === "throw" ? b.data.createdAt : b.data.createdAt).getTime() -
+    new Date(a.kind === "throw" ? a.data.createdAt : a.data.createdAt).getTime()
+  ).slice(0, 20);
+
   const bigBtn = "py-5 rounded-2xl font-bold text-xl text-white w-full";
   const backBtn = "text-blue-500 text-base py-2 px-1 font-medium";
 
@@ -145,23 +206,34 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
     return "bg-gray-50 border-gray-200 text-gray-800";
   }
 
+  const adjDeltaNum = parseInt(adjDelta, 10);
+  const adjValid = adjModal && adjDelta !== "" && !isNaN(adjDeltaNum) && adjDeltaNum !== 0 && adjComment.trim().length > 0;
+
   return (
     <main className="max-w-lg mx-auto p-4 pb-24">
       {/* Header with score */}
       <div className="flex items-center gap-2 mb-4">
         <Link href="/" className="text-gray-400 text-2xl min-w-[44px] min-h-[44px] flex items-center justify-center -ml-2">←</Link>
 
-        {/* Score tracker */}
+        {/* Score tracker — tap to adjust */}
         <div className="flex-1 flex items-center justify-center gap-3">
-          <div className="flex flex-col items-center">
+          <button
+            type="button"
+            onClick={() => openAdjModal("A")}
+            className="flex flex-col items-center active:opacity-70"
+          >
             <span className="text-xs font-semibold text-blue-500 uppercase">Team A</span>
             <span className="text-3xl font-black text-blue-600">{teamAScore}</span>
-          </div>
+          </button>
           <span className="text-xl text-gray-300 font-light">vs</span>
-          <div className="flex flex-col items-center">
+          <button
+            type="button"
+            onClick={() => openAdjModal("B")}
+            className="flex flex-col items-center active:opacity-70"
+          >
             <span className="text-xs font-semibold text-red-500 uppercase">Team B</span>
             <span className="text-3xl font-black text-red-600">{teamBScore}</span>
-          </div>
+          </button>
         </div>
 
         <span className="text-sm text-gray-400">{throws.length} throws</span>
@@ -411,19 +483,35 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
         </>
       )}
 
-      {/* Throw log */}
-      {throws.length > 0 && (
+      {/* Throw + adjustment log */}
+      {logItems.length > 0 && (
         <div className="mt-6">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
-            Throw Log <span className="text-gray-400 font-normal normal-case">(tap to remove)</span>
+            Log <span className="text-gray-400 font-normal normal-case">(tap throw to remove)</span>
           </h2>
           <div className="space-y-1">
-            {[...throws].reverse().slice(0, 15).map((t, i) => {
+            {logItems.map((item, i) => {
+              if (item.kind === "adj") {
+                const a = item.data;
+                const teamCls = a.team === "A" ? "bg-blue-400" : "bg-red-400";
+                const deltaTxt = a.delta > 0 ? `+${a.delta}` : `${a.delta}`;
+                return (
+                  <div key={`adj-${a.id}`} className="flex items-center gap-2 text-sm rounded-xl px-2 py-2 bg-purple-50 border border-purple-200">
+                    <span className="text-gray-300 w-5 text-right text-xs">—</span>
+                    <span className={`w-4 h-4 rounded-full flex-shrink-0 ${teamCls}`} />
+                    <span className="font-semibold text-purple-700">Team {a.team} {deltaTxt}</span>
+                    <span className="text-purple-500 text-xs truncate">— {a.comment}</span>
+                  </div>
+                );
+              }
+              const t = item.data as Throw;
               const team = playerTeam(t.throwerId);
               const isConfirming = confirmDeleteId === t.id;
+              // find sequential index among throws only
+              const throwIndex = throws.findIndex((th) => th.id === t.id);
               return (
                 <div
-                  key={t.id}
+                  key={`throw-${t.id}`}
                   className={`flex items-center gap-2 text-sm rounded-xl px-2 py-2 transition-colors ${
                     isConfirming ? "bg-red-50 border border-red-200" : "border border-transparent"
                   }`}
@@ -433,7 +521,7 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                     onClick={() => setConfirmDeleteId(isConfirming ? null : t.id)}
                     className="flex items-center gap-2 flex-1 min-h-0 text-left"
                   >
-                    <span className="text-gray-300 w-5 text-right text-xs">{throws.length - i}</span>
+                    <span className="text-gray-300 w-5 text-right text-xs">{throwIndex + 1}</span>
                     <span className={`w-4 h-4 rounded-full flex-shrink-0 ${team === "A" ? "bg-blue-400" : "bg-red-400"}`} />
                     <span className="font-medium">{t.thrower.name}</span>
                     {!t.isHit && <span className="text-red-400">miss</span>}
@@ -463,6 +551,78 @@ export default function GamePage({ params }: { params: Promise<{ id: string }> }
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Score adjustment modal */}
+      {adjModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h2 className="text-lg font-bold mb-1">Adjust Score</h2>
+            <p className="text-sm text-gray-500 mb-4">Custom ruleset correction for Team {adjModal.team}</p>
+
+            {/* Team toggle */}
+            <div className="flex rounded-xl border border-gray-200 overflow-hidden text-sm font-medium mb-4">
+              <button
+                type="button"
+                onClick={() => setAdjModal({ team: "A" })}
+                className={`flex-1 py-2.5 ${adjModal.team === "A" ? "bg-blue-500 text-white" : "bg-white text-gray-500"}`}
+              >
+                Team A
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdjModal({ team: "B" })}
+                className={`flex-1 py-2.5 ${adjModal.team === "B" ? "bg-red-500 text-white" : "bg-white text-gray-500"}`}
+              >
+                Team B
+              </button>
+            </div>
+
+            {/* Delta input */}
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">
+              Points (use − for deduction)
+            </label>
+            <input
+              type="number"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base mb-3"
+              placeholder="e.g. +2 or -1"
+              value={adjDelta}
+              onChange={(e) => setAdjDelta(e.target.value)}
+              autoFocus
+            />
+
+            {/* Comment */}
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">
+              Reason (required)
+            </label>
+            <input
+              type="text"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base mb-4"
+              placeholder="e.g. penalty kick, missed zone..."
+              value={adjComment}
+              onChange={(e) => setAdjComment(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && adjValid && submitAdjustment()}
+            />
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setAdjModal(null)}
+                className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-600 font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={submitAdjustment}
+                disabled={!adjValid || adjSaving}
+                className="flex-1 py-3 rounded-xl bg-gray-800 text-white font-semibold disabled:opacity-40"
+              >
+                {adjSaving ? "Saving…" : "Apply"}
+              </button>
+            </div>
           </div>
         </div>
       )}

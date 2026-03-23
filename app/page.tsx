@@ -12,26 +12,40 @@ type Game = {
 
 export default function Home() {
   const [games, setGames] = useState<Game[]>([]);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{ gameId: string } | null>(null);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     fetch("/api/games").then((r) => r.json()).then(setGames);
   }, []);
 
-  async function deleteGame(id: string) {
-    const pw = prompt("Enter developer password:");
-    if (!pw) return;
-    const res = await fetch(`/api/games/${id}`, {
+  function openDeleteModal(gameId: string) {
+    setDeleteModal({ gameId });
+    setDeletePassword("");
+    setDeleteError("");
+  }
+
+  function closeDeleteModal() {
+    setDeleteModal(null);
+    setDeletePassword("");
+    setDeleteError("");
+  }
+
+  async function confirmDelete() {
+    if (!deleteModal) return;
+    const res = await fetch(`/api/games/${deleteModal.gameId}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password: pw }),
+      body: JSON.stringify({ password: deletePassword }),
     });
     if (res.ok) {
-      setGames((prev) => prev.filter((g) => g.id !== id));
+      setGames((prev) => prev.filter((g) => g.id !== deleteModal.gameId));
+      closeDeleteModal();
     } else {
-      alert("Wrong password.");
+      setDeleteError("Wrong password.");
+      setDeletePassword("");
     }
-    setConfirmDeleteId(null);
   }
 
   return (
@@ -84,36 +98,54 @@ export default function Home() {
                 </div>
                 <span className="text-gray-300 mr-2">›</span>
               </Link>
-              {confirmDeleteId === g.id ? (
-                <div className="flex gap-1">
-                  <button
-                    type="button"
-                    onClick={() => deleteGame(g.id)}
-                    className="text-xs font-semibold text-white bg-red-500 px-3 py-1.5 rounded-lg"
-                  >
-                    Delete
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmDeleteId(null)}
-                    className="text-xs font-semibold text-gray-500 bg-gray-100 px-3 py-1.5 rounded-lg"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setConfirmDeleteId(g.id)}
-                  className="text-gray-300 text-lg px-2"
-                >
-                  ✕
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => openDeleteModal(g.id)}
+                className="text-gray-300 text-lg px-2"
+              >
+                ✕
+              </button>
             </div>
           );
         })}
       </div>
+
+      {/* Delete confirmation modal */}
+      {deleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h2 className="text-lg font-bold mb-1">Delete Game</h2>
+            <p className="text-sm text-gray-500 mb-4">Enter the developer password to confirm.</p>
+            <input
+              type="password"
+              autoFocus
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base mb-2"
+              placeholder="Password"
+              value={deletePassword}
+              onChange={(e) => { setDeletePassword(e.target.value); setDeleteError(""); }}
+              onKeyDown={(e) => e.key === "Enter" && confirmDelete()}
+            />
+            {deleteError && <p className="text-red-500 text-sm mb-2">{deleteError}</p>}
+            <div className="flex gap-2 mt-3">
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-600 font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={!deletePassword}
+                className="flex-1 py-3 rounded-xl bg-red-500 text-white font-semibold disabled:opacity-40"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
